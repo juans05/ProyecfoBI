@@ -1,0 +1,190 @@
+// =============================================
+// Prisma Schema — Intranet Modular Empresarial
+// =============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// DOMINIO: AUTH & USUARIOS
+// ─────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  firstName    String   @map("first_name")
+  lastName     String   @map("last_name")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relaciones
+  profiles          UserProfile[]
+  passwordResetTokens PasswordResetToken[]
+  auditLogs         AuditLog[]
+
+  @@map("users")
+}
+
+model Profile {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relaciones
+  users           UserProfile[]
+  profileModules  ProfileModule[]
+  profileResources ProfileResource[]
+
+  @@map("profiles")
+}
+
+model UserProfile {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  profileId  String   @map("profile_id")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, profileId])
+  @@map("user_profiles")
+}
+
+// ─────────────────────────────────────────────
+// DOMINIO: AUTH — RECUPERACIÓN DE CONTRASEÑA
+// ─────────────────────────────────────────────
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  tokenHash String    @map("token_hash") // SHA-256 del token real
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
+}
+
+// ─────────────────────────────────────────────
+// DOMINIO: NAVEGACIÓN — MÓDULOS Y RECURSOS
+// ─────────────────────────────────────────────
+
+model Module {
+  id       String  @id @default(uuid())
+  name     String
+  icon     String? // nombre del ícono de lucide-react, ej: "BarChart2"
+  order    Int     @default(0)
+  parentId String? @map("parent_id")
+  isActive Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Auto-relación para jerarquía (módulos padre/hijo)
+  parent   Module?  @relation("ModuleHierarchy", fields: [parentId], references: [id])
+  children Module[] @relation("ModuleHierarchy")
+
+  // Relaciones
+  resources      Resource[]
+  profileModules ProfileModule[]
+
+  @@map("modules")
+}
+
+model Resource {
+  id                 String       @id @default(uuid())
+  moduleId           String       @map("module_id")
+  name               String
+  type               ResourceType
+  url                String?      // Ruta Next.js o URL externa
+  powerbiReportId    String?      @map("powerbi_report_id")
+  powerbiWorkspaceId String?      @map("powerbi_workspace_id")
+  order              Int          @default(0)
+  isActive           Boolean      @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  module           Module            @relation(fields: [moduleId], references: [id])
+  profileResources ProfileResource[]
+
+  @@map("resources")
+}
+
+enum ResourceType {
+  PAGE
+  POWERBI
+  LINK
+}
+
+// ─────────────────────────────────────────────
+// DOMINIO: PERMISOS
+// ─────────────────────────────────────────────
+
+// Perfiles que pueden acceder a qué módulos
+model ProfileModule {
+  id        String  @id @default(uuid())
+  profileId String  @map("profile_id")
+  moduleId  String  @map("module_id")
+  canAccess Boolean @default(true) @map("can_access")
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  module  Module  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, moduleId])
+  @@map("profile_modules")
+}
+
+// Perfiles que pueden ver/editar/eliminar qué recursos
+model ProfileResource {
+  id         String  @id @default(uuid())
+  profileId  String  @map("profile_id")
+  resourceId String  @map("resource_id")
+  canView    Boolean @default(true) @map("can_view")
+  canEdit    Boolean @default(false) @map("can_edit")
+  canDelete  Boolean @default(false) @map("can_delete")
+
+  profile  Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, resourceId])
+  @@map("profile_resources")
+}
+
+// ─────────────────────────────────────────────
+// DOMINIO: AUDITORÍA
+// ─────────────────────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  action    String   // LOGIN, LOGOUT, CREATE_USER, UPDATE_PROFILE, etc.
+  entity    String?  // Tabla afectada: "users", "profiles", etc.
+  entityId  String?  @map("entity_id")
+  oldValues Json?    @map("old_values")
+  newValues Json?    @map("new_values")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_log")
+}
