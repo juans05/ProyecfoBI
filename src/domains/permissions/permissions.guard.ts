@@ -1,19 +1,17 @@
 /**
  * domains/permissions/permissions.guard.ts
- * Guard de permisos — SIEMPRE validar en backend, nunca solo en frontend
+ * Guard de permisos optimizado para alto rendimiento
  */
 
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth-options'
+import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { ApiErrors } from '@/lib/api-response'
 
 /**
  * Verifica que el usuario tenga sesión activa.
- * Retorna la sesión o una respuesta 401.
  */
 export async function requireAuth() {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   if (!session?.user?.id) {
     return { session: null, error: ApiErrors.UNAUTHORIZED() }
   }
@@ -21,68 +19,76 @@ export async function requireAuth() {
 }
 
 /**
- * Verifica que el usuario tenga acceso a un recurso específico.
- * Busca por URL de recurso (para PAGE) o por resourceId.
+ * [OPTIMIZADO] Verifica acceso con una sola consulta a la base de datos.
+ * Reduce la latencia de navegación al consolidar validaciones de perfil, recurso y sede.
  */
 export async function requireResourceAccess(
   userId: string,
   resourceId: string,
+  activeBranchId?: string,
   permission: 'canView' | 'canEdit' | 'canDelete' = 'canView'
 ) {
-  // Obtener perfiles del usuario
-  const userProfiles = await prisma.userProfile.findMany({
-    where: { userId },
-    select: { profileId: true },
-  })
-
-  const profileIds = userProfiles.map((up) => up.profileId)
-
-  // Verificar si alguno de sus perfiles tiene el permiso
+  // Una sola consulta que valida el permiso a través de la relación Profile -> User
   const access = await prisma.profileResource.findFirst({
     where: {
-      profileId: { in: profileIds },
       resourceId,
       [permission]: true,
+      profile: {
+        isActive: true,
+        users: {
+          some: { userId }
+        }
+      }
     },
+    select: {
+      resource: {
+        select: { branchId: true }
+      }
+    }
   })
 
-  return !!access
+  if (!access) return false
+
+  // Validación de sede (solo si el recurso está restringido a una sede específica)
+  if (access.resource.branchId && activeBranchId && access.resource.branchId !== activeBranchId) {
+    return false
+  }
+
+  return true
 }
 
 /**
- * Verifica que el usuario tenga acceso a un módulo.
+ * [OPTIMIZADO] Verifica acceso a módulo consolidado.
  */
 export async function requireModuleAccess(userId: string, moduleId: string) {
-  const userProfiles = await prisma.userProfile.findMany({
-    where: { userId },
-    select: { profileId: true },
-  })
-
-  const profileIds = userProfiles.map((up) => up.profileId)
-
   const access = await prisma.profileModule.findFirst({
     where: {
-      profileId: { in: profileIds },
       moduleId,
       canAccess: true,
-    },
+      profile: {
+        isActive: true,
+        users: {
+          some: { userId }
+        }
+      }
+    }
   })
 
   return !!access
 }
 
 /**
- * Verifica si el usuario es administrador
- * (tiene el perfil "Administrador")
+ * Verifica si el usuario es administrador global de su empresa.
  */
 export async function isAdmin(userId: string): Promise<boolean> {
-  const adminProfile = await prisma.profile.findUnique({
-    where: { name: 'Administrador' },
-  })
-  if (!adminProfile) return false
-
   const isAdminUser = await prisma.userProfile.findFirst({
-    where: { userId, profileId: adminProfile.id },
+    where: { 
+      userId,
+      profile: {
+        name: 'Administrador',
+        isActive: true
+      }
+    },
   })
 
   return !!isAdminUser

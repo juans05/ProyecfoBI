@@ -1,115 +1,84 @@
-/**
- * domains/navigation/navigation.service.ts
- * Construye el menú dinámico del usuario autenticado
- * basado en sus perfiles y permisos en base de datos
- */
-
 import { prisma } from '@/lib/prisma'
+import { ResourceType } from '@prisma/client'
 
-export type NavResource = {
-  id: string
-  name: string
-  type: string
-  url: string | null
-  order: number
-}
-
-export type NavModule = {
+export interface MenuItem {
   id: string
   name: string
   icon: string | null
-  order: number
-  parentId: string | null
-  resources: NavResource[]
-  children: NavModule[]
+  href?: string
+  group?: string
+  children?: MenuItem[]
 }
 
-export const NavigationService = {
+export class NavigationService {
   /**
-   * Retorna el árbol de menú al que tiene acceso el usuario.
-   * Solo incluye módulos y recursos con permiso activo.
+   * [ULTRA-OPTIMIZADO] Obtiene la estructura del menú en una sola consulta.
    */
-  async getMenuForUser(userId: string): Promise<NavModule[]> {
-    // Obtener perfiles del usuario
-    const userProfiles = await prisma.userProfile.findMany({
-      where: { userId },
-      select: { profileId: true },
-    })
-    const profileIds = userProfiles.map((up) => up.profileId)
-
-    // Módulos accesibles por sus perfiles
-    const accessibleModules = await prisma.profileModule.findMany({
+  static async getMenuData(userId: string, companyId: string, branchId?: string) {
+    // Consulta atómica que valida permisos, empresa, sede y jerarquía en un solo paso
+    const modules = await prisma.module.findMany({
       where: {
-        profileId: { in: profileIds },
-        canAccess: true,
+        companyId,
+        isActive: true,
+        resources: {
+          some: {
+            isActive: true,
+            OR: [
+              { branchId: branchId || null },
+              { branchId: null }
+            ],
+            profileResources: {
+              some: {
+                canView: true,
+                profile: {
+                  isActive: true,
+                  users: {
+                    some: { userId }
+                  }
+                }
+              }
+            }
+          }
+        }
       },
       include: {
-        module: {
-          include: {
-            children: true,
-            resources: {
-              where: { isActive: true },
-              orderBy: { order: 'asc' },
-            },
+        resources: {
+          where: {
+            isActive: true,
+            OR: [
+              { branchId: branchId || null },
+              { branchId: null }
+            ],
+            profileResources: {
+              some: {
+                canView: true,
+                profile: {
+                  isActive: true,
+                  users: {
+                    some: { userId }
+                  }
+                }
+              }
+            }
           },
+          orderBy: { order: 'asc' },
         },
       },
+      orderBy: { order: 'asc' },
     })
 
-    // Recursos accesibles por sus perfiles
-    const accessibleResourceIds = await prisma.profileResource.findMany({
-      where: {
-        profileId: { in: profileIds },
-        canView: true,
-      },
-      select: { resourceId: true },
-    })
-    const resourceIdSet = new Set(accessibleResourceIds.map((pr) => pr.resourceId))
-
-    // Deduplicar módulos (un usuario puede tener múltiples perfiles)
-    const moduleMap = new Map<string, NavModule>()
-
-    for (const pm of accessibleModules) {
-      const mod = pm.module
-      if (moduleMap.has(mod.id)) continue
-      if (!mod.isActive) continue
-
-      moduleMap.set(mod.id, {
-        id: mod.id,
-        name: mod.name,
-        icon: mod.icon,
-        order: mod.order,
-        parentId: mod.parentId,
-        resources: mod.resources
-          .filter((r) => resourceIdSet.has(r.id))
-          .map((r) => ({
-            id: r.id,
-            name: r.name,
-            type: r.type,
-            url: r.url,
-            order: r.order,
-          })),
-        children: [],
-      })
-    }
-
-    // Construir jerarquía (módulos padre/hijo)
-    const roots: NavModule[] = []
-    for (const mod of moduleMap.values()) {
-      if (mod.parentId && moduleMap.has(mod.parentId)) {
-        moduleMap.get(mod.parentId)!.children.push(mod)
-      } else {
-        roots.push(mod)
-      }
-    }
-
-    // Ordenar por campo order
-    const sortByOrder = (a: NavModule, b: NavModule) => a.order - b.order
-    roots.sort(sortByOrder)
-    for (const mod of moduleMap.values()) {
-      mod.children.sort(sortByOrder)
-    }
-
-    return roots
-  },
+    return modules.map((mod) => ({
+      id: mod.id,
+      name: mod.name,
+      icon: mod.icon,
+      resources: mod.resources.map((res) => ({
+        id: res.id,
+        name: res.name,
+        type: res.type,
+        href: res.type === ResourceType.POWERBI 
+          ? `/dashboard/bi/${res.id}` 
+          : res.url || '#',
+      })),
+    }))
+  }
 }

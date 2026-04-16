@@ -19,10 +19,14 @@ export const AuthService = {
         profiles: {
           include: { profile: true },
         },
+        company: true
       },
     })
 
     if (!user || !user.isActive) return null
+
+    // Si pertenece a una empresa, verificar que la empresa esté activa
+    if (user.companyId && !user.company?.isActive) return null
 
     const isValid = await bcrypt.compare(password, user.passwordHash)
     if (!isValid) return null
@@ -31,6 +35,9 @@ export const AuthService = {
       id: user.id,
       email: user.email,
       name: `${user.firstName} ${user.lastName}`,
+      isRoot: user.isRoot,
+      companyId: user.companyId,
+      companyName: user.company?.name,
       profiles: user.profiles.map((up) => up.profile.name),
     }
   },
