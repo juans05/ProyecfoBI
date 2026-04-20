@@ -48,11 +48,22 @@ export function PermissionMatrix({ profileId, initialModules }: PermissionMatrix
     )
   }
 
-  const toggleResourcePerm = (resId: string, type: 'view' | 'edit' | 'del') => {
-    setResourcePerms(prev => ({
-      ...prev,
-      [resId]: { ...prev[resId], [type]: !prev[resId][type] }
-    }))
+  const toggleResourcePerm = (resId: string, type: 'view' | 'edit' | 'del', moduleId: string) => {
+    setResourcePerms(prev => {
+      const isActivating = !prev[resId][type]
+      
+      // Si se activa la vista, asegurar que el módulo padre esté marcado
+      if (isActivating && type === 'view') {
+        setSelectedModules(current => 
+          current.includes(moduleId) ? current : [...current, moduleId]
+        )
+      }
+
+      return {
+        ...prev,
+        [resId]: { ...prev[resId], [type]: isActivating }
+      }
+    })
   }
 
   const handleSave = () => {
@@ -134,21 +145,21 @@ export function PermissionMatrix({ profileId, initialModules }: PermissionMatrix
                         </div>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <button onClick={() => toggleResourcePerm(res.id, 'view')} className="transition-transform active:scale-90">
+                        <button onClick={() => toggleResourcePerm(res.id, 'view', mod.id)} className="transition-transform active:scale-90">
                           {resourcePerms[res.id]?.view 
                             ? <CheckSquare size={19} className="text-emerald-600 fill-emerald-50" /> 
                             : <Square size={19} className="text-slate-200" />}
                         </button>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <button onClick={() => toggleResourcePerm(res.id, 'edit')} className="transition-transform active:scale-90">
+                        <button onClick={() => toggleResourcePerm(res.id, 'edit', mod.id)} className="transition-transform active:scale-90">
                           {resourcePerms[res.id]?.edit 
                             ? <CheckSquare size={19} className="text-blue-600 fill-blue-50" /> 
                             : <Square size={19} className="text-slate-200" />}
                         </button>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <button onClick={() => toggleResourcePerm(res.id, 'del')} className="transition-transform active:scale-90">
+                        <button onClick={() => toggleResourcePerm(res.id, 'del', mod.id)} className="transition-transform active:scale-90">
                           {resourcePerms[res.id]?.del 
                             ? <CheckSquare size={19} className="text-red-500 fill-red-50" /> 
                             : <Square size={19} className="text-slate-200" />}
