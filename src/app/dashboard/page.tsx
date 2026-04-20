@@ -10,10 +10,21 @@ import {
   ShieldCheck
 } from "lucide-react"
 
+import { WelcomeView } from "@/components/dashboard/WelcomeView"
+
 export default async function DashboardPage() {
   const session = await auth()
-  const isRoot = (session?.user as any).isRoot
-  const companyName = (session?.user as any).companyName
+  if (!session?.user) return null
+
+  const isRoot = (session.user as any).isRoot
+  const profiles = (session.user as any).profiles || []
+  const isAdmin = isRoot || profiles.includes('Administrador')
+  
+  const companyName = (session.user as any).companyName
+
+  if (!isAdmin) {
+    return <WelcomeView userName={session.user.name!} companyName={companyName} />
+  }
 
   const stats = [
     { name: isRoot ? 'Empresas Totales' : 'Ventas Totales', value: isRoot ? '1' : '$124,592', icon: isRoot ? Building2 : BarChart3, trend: '+12.5%', isUp: true },
