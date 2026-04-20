@@ -14,7 +14,7 @@ export const AuthService = {
    */
   async verifyCredentials(email: string, password: string) {
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { email: email.toLowerCase() },
       include: {
         profiles: {
           include: { profile: true },

@@ -25,3 +25,6 @@ Thumbs.db
 
 # Prisma
 prisma/migrations/dev/
+
+# Scratch files
+scratch/

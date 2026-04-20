@@ -66,5 +66,8 @@
     "ts-node": "^10.9.2",
     "typescript": "^5",
     "vitest": "^4.1.4"
+  },
+  "prisma": {
+    "seed": "ts-node -P prisma/tsconfig.seed.json prisma/seed.ts"
   }
 }
