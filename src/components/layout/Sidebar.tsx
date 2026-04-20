@@ -136,62 +136,7 @@ export function Sidebar({ menuData, user, companyData }: SidebarProps) {
             </div>
           ))}
           
-          {/* Static Admin Links */}
-          {(user?.isRoot || user?.profiles?.includes('Administrador')) && (
-            <div>
-              {!isCollapsed && <div className="sidebar-nav-group animate-in fade-in duration-300">Administración</div>}
-              <div className="space-y-1">
-                <Link
-                  href="/dashboard/admin/users"
-                  className={cn("sidebar-nav-item", isCollapsed && "justify-center px-0", pathname.includes("/admin/users") && "active")}
-                  style={{
-                    color: pathname.includes("/admin/users") ? 'white' : 'var(--sidebar-text)',
-                    backgroundColor: pathname.includes("/admin/users") ? 'var(--brand-primary)' : 'transparent'
-                  }}
-                  title={isCollapsed ? "Usuarios" : undefined}
-                >
-                  <Users size={18} className="shrink-0" />
-                  {!isCollapsed && <span className="flex-1 animate-in fade-in duration-300">Usuarios</span>}
-                </Link>
-                <Link
-                  href="/dashboard/admin/profiles"
-                  className={cn("sidebar-nav-item", isCollapsed && "justify-center px-0", pathname.includes("/admin/profiles") && "active")}
-                  style={{
-                    color: pathname.includes("/admin/profiles") ? 'white' : 'var(--sidebar-text)',
-                    backgroundColor: pathname.includes("/admin/profiles") ? 'var(--brand-primary)' : 'transparent'
-                  }}
-                  title={isCollapsed ? "Perfiles" : undefined}
-                >
-                  <Shield size={18} className="shrink-0" />
-                  {!isCollapsed && <span className="flex-1 animate-in fade-in duration-300">Perfiles</span>}
-                </Link>
-                <Link
-                  href="/dashboard/admin/modules"
-                  className={cn("sidebar-nav-item", isCollapsed && "justify-center px-0", pathname.includes("/admin/modules") && "active")}
-                  style={{
-                    color: pathname.includes("/admin/modules") ? 'white' : 'var(--sidebar-text)',
-                    backgroundColor: pathname.includes("/admin/modules") ? 'var(--brand-primary)' : 'transparent'
-                  }}
-                  title={isCollapsed ? "Módulos y Recursos" : undefined}
-                >
-                  <Database size={18} className="shrink-0" />
-                  {!isCollapsed && <span className="flex-1 animate-in fade-in duration-300">Módulos y Recursos</span>}
-                </Link>
-                <Link
-                  href="/dashboard/admin/settings"
-                  className={cn("sidebar-nav-item", isCollapsed && "justify-center px-0", pathname.includes("/admin/settings") && "active")}
-                  style={{
-                    color: pathname.includes("/admin/settings") ? 'white' : 'var(--sidebar-text)',
-                    backgroundColor: pathname.includes("/admin/settings") ? 'var(--brand-primary)' : 'transparent'
-                  }}
-                  title={isCollapsed ? "Ajustes de Empresa" : undefined}
-                >
-                  <Settings size={18} className="shrink-0" />
-                  {!isCollapsed && <span className="flex-1 animate-in fade-in duration-300">Ajustes de Empresa</span>}
-                </Link>
-              </div>
-            </div>
-          )}
+
         </div>
       </nav>
 
