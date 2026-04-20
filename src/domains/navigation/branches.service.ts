@@ -3,9 +3,9 @@ import { prisma } from "@/lib/prisma"
 /**
  * Obtiene todas las sedes activas
  */
-export async function getBranches() {
+export async function getBranches(companyId: string) {
   return await prisma.branch.findMany({
-    where: { isActive: true },
+    where: { companyId, isActive: true },
     orderBy: { name: 'asc' }
   })
 }

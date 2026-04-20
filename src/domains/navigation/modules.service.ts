@@ -4,10 +4,13 @@ import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { ResourceType } from '@prisma/client'
 
-export async function getModulesWithResources() {
+export async function getModulesWithResources(companyId: string) {
   return await prisma.module.findMany({
+    where: { companyId },
     include: {
-      resources: true,
+      resources: {
+        orderBy: { order: 'asc' }
+      },
     },
     orderBy: { order: 'asc' }
   })
