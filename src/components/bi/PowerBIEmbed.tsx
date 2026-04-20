@@ -49,6 +49,8 @@ export function PowerBIEmbed({ resourceId, refreshTrigger }: PowerBIEmbedProps) 
       },
       navContentPaneEnabled: true,
       background: models.BackgroundType.Transparent,
+      layoutType: models.LayoutType.Master,
+      displayOption: models.DisplayOption.FitToWidth,
     },
   }), [embedConfig])
 

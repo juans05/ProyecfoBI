@@ -53,7 +53,7 @@ export default async function PowerBIPage({ params }: PageProps) {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-0 sm:p-2 md:p-4">
       <BIReportView resource={resource} />
     </div>
   )
