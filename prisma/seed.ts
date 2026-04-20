@@ -124,7 +124,8 @@ async function main() {
   const resourcesData = [
     { name: 'Usuarios', url: '/dashboard/admin/users', order: 1 },
     { name: 'Perfiles', url: '/dashboard/admin/profiles', order: 2 },
-    { name: 'Ajustes de Empresa', url: '/dashboard/admin/settings', order: 3 },
+    { name: 'Módulos y Recursos', url: '/dashboard/admin/modules', order: 3 },
+    { name: 'Ajustes de Empresa', url: '/dashboard/admin/settings', order: 4 },
   ]
 
   for (const res of resourcesData) {

@@ -38,9 +38,11 @@ interface SidebarProps {
   menuData: any[]
   user: any
   companyData: any
+  isMobileOpen?: boolean
+  onClose?: () => void
 }
 
-export function Sidebar({ menuData, user, companyData }: SidebarProps) {
+export function Sidebar({ menuData, user, companyData, isMobileOpen, onClose }: SidebarProps) {
   const pathname = usePathname()
   const [isCollapsed, setIsCollapsed] = useState(false)
 
@@ -66,14 +68,26 @@ export function Sidebar({ menuData, user, companyData }: SidebarProps) {
     : null
 
   return (
-    <aside 
-      className={cn("intranet-sidebar border-r border-slate-800", isCollapsed && "w-[80px]")}
-      style={{
-        backgroundColor: 'var(--sidebar-bg)',
-        color: 'var(--sidebar-text)',
-        borderColor: 'rgba(255,255,255,0.1)'
-      }}
-    >
+    <>
+      {/* Mobile Backdrop */}
+      {isMobileOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden animate-in fade-in duration-300"
+          onClick={onClose}
+        />
+      )}
+
+      <aside 
+        className={cn(
+          "intranet-sidebar border-r border-slate-800", 
+          isCollapsed && "w-[80px]",
+        )}
+        style={{
+          backgroundColor: 'var(--sidebar-bg)',
+          color: 'var(--sidebar-text)',
+          borderColor: 'rgba(255,255,255,0.1)'
+        }}
+      >
       <div className="sidebar-logo justify-between px-4">
         <div className="flex items-center">
           <div 
