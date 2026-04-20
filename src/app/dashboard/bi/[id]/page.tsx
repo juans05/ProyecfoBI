@@ -33,7 +33,7 @@ export default async function PowerBIPage({ params }: PageProps) {
   const cookieStore = cookies()
   const activeBranchId = cookieStore.get('activeBranchId')?.value || (session.user as any).activeBranchId
 
-  const hasAccess = await requireResourceAccess(session.user.id, id, activeBranchId, 'canView')
+  const hasAccess = await requireResourceAccess(session.user.id!, id, activeBranchId, 'canView')
 
   if (!hasAccess) {
     return (

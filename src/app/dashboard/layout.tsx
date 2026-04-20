@@ -49,7 +49,7 @@ export default async function DashboardLayout({
     ]
   } else if (companyId) {
     const [fetchedMenuData, fetchedCompanyData] = await Promise.all([
-      NavigationService.getMenuData(session.user.id, companyId, activeBranchId),
+      NavigationService.getMenuData(session.user.id!, companyId, activeBranchId),
       prisma.company.findUnique({
         where: { id: companyId },
         select: { 
