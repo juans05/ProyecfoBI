@@ -13,9 +13,10 @@ export async function getModulesWithResources() {
   })
 }
 
-export async function createModule(data: any) {
+export async function createModule(data: any, companyId: string) {
   const mod = await prisma.module.create({
     data: {
+      companyId,
       name: data.name,
       icon: data.icon || 'FileText',
       order: parseInt(data.order) || 0,
@@ -27,11 +28,11 @@ export async function createModule(data: any) {
   return mod
 }
 
-export async function createResource(data: any) {
+export async function createResource(data: any, companyId: string) {
   const res = await prisma.resource.create({
     data: {
-      name: data.name,
       moduleId: data.moduleId,
+      name: data.name,
       type: data.type as ResourceType,
       url: data.url,
       powerbiReportId: data.powerbiReportId,
@@ -39,14 +40,18 @@ export async function createResource(data: any) {
     }
   })
   
-  // Dar permiso automático al Administrador para el nuevo recurso
-  const adminProfile = await prisma.profile.findUnique({ where: { name: 'Administrador' } })
+  // Dar permiso automático al Administrador local para el nuevo recurso
+  const adminProfile = await prisma.profile.findFirst({ 
+    where: { name: 'Administrador', companyId } 
+  })
   if (adminProfile) {
     await prisma.profileResource.create({
       data: {
         profileId: adminProfile.id,
         resourceId: res.id,
-        canView: true
+        canView: true,
+        canEdit: true,
+        canDelete: true
       }
     })
   }

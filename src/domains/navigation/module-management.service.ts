@@ -20,10 +20,10 @@ export const ModuleManagementService = {
   /**
    * Crea un nuevo módulo y otorga permisos automáticos al Administrador
    */
-  async createModule(companyId: string, name: string, icon: string) {
+  async createModule(companyId: string, name: string, icon: string, order: number = 0) {
     return await prisma.$transaction(async (tx) => {
       const module = await tx.module.create({
-        data: { companyId, name, icon, isActive: true }
+        data: { companyId, name, icon, order, isActive: true }
       })
 
       // Otorgar permiso automático al perfil de Administrador de la empresa

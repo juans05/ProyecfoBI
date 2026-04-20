@@ -5,13 +5,13 @@ import { ModuleManagementService } from "./module-management.service"
 import { revalidatePath } from "next/cache"
 import { ResourceType } from "@prisma/client"
 
-export async function createModuleAction(name: string, icon: string = "Package") {
+export async function createModuleAction(name: string, icon: string = "Package", order: number = 0) {
   const session = await auth()
   const companyId = (session?.user as any)?.companyId
 
   if (!companyId) throw new Error("No autorizado")
 
-  await ModuleManagementService.createModule(companyId, name, icon)
+  await ModuleManagementService.createModule(companyId, name, icon, order)
   
   revalidatePath("/dashboard/admin/modules")
   revalidatePath("/dashboard") // Para actualizar el menú lateral

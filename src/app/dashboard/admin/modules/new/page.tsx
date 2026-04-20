@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { createModule } from "@/domains/navigation/modules.service"
+import { createModuleAction } from "@/domains/navigation/module-management.actions"
 import { Save, X, Box, Type, ListOrdered } from "lucide-react"
 import { toast } from "sonner"
 
@@ -19,7 +19,7 @@ export default function NewModulePage() {
     e.preventDefault()
     setIsLoading(true)
     try {
-      await createModule(formData)
+      await createModuleAction(formData.name, formData.icon, formData.order)
       toast.success("Módulo creado correctamente")
       router.push("/dashboard/admin/modules")
       router.refresh()
