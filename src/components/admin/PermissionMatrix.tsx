@@ -1,7 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, Fragment, startTransition } from "react"
 import { 
   Shield, 
   ChevronRight, 
@@ -21,7 +20,6 @@ interface PermissionMatrixProps {
 }
 
 export function PermissionMatrix({ profileId, initialModules }: PermissionMatrixProps) {
-  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   
   // State for modules (simple array of IDs)
@@ -33,7 +31,7 @@ export function PermissionMatrix({ profileId, initialModules }: PermissionMatrix
   const [resourcePerms, setResourcePerms] = useState<Record<string, { view: boolean, edit: boolean, del: boolean }>>(
     initialModules.reduce((acc, mod) => {
       mod.resources.forEach((res: any) => {
-        const p = mod.profileResources ? mod.profileResources.find((pr: any) => pr.resourceId === res.id) : null
+        const p = res.profileResources && res.profileResources.length > 0 ? res.profileResources[0] : null
         acc[res.id] = {
           view: p?.canView || false,
           edit: p?.canEdit || false,
@@ -57,9 +55,10 @@ export function PermissionMatrix({ profileId, initialModules }: PermissionMatrix
     }))
   }
 
-  const handleSave = async () => {
+  const handleSave = () => {
     setIsLoading(true)
-    try {
+    
+    startTransition(() => {
       const resourcePermissions = Object.entries(resourcePerms).map(([id, p]) => ({
         resourceId: id,
         canView: p.view,
@@ -67,18 +66,20 @@ export function PermissionMatrix({ profileId, initialModules }: PermissionMatrix
         canDelete: p.del
       }))
 
-      await updatePermissions(profileId, {
+      updatePermissions(profileId, {
         moduleIds: selectedModules,
         resourcePermissions
       })
-      
-      toast.success("Seguridad del perfil actualizada")
-      router.refresh()
-    } catch (error) {
-      toast.error("Error al sincronizar permisos")
-    } finally {
-      setIsLoading(false)
-    }
+      .then(() => {
+        toast.success("Seguridad del perfil actualizada")
+      })
+      .catch((error) => {
+        toast.error("Error al sincronizar permisos")
+      })
+      .finally(() => {
+        setIsLoading(false)
+      })
+    })
   }
 
   return (
@@ -96,7 +97,7 @@ export function PermissionMatrix({ profileId, initialModules }: PermissionMatrix
             </thead>
             <tbody className="divide-y divide-slate-100">
               {initialModules.map((mod) => (
-                <react.Fragment key={mod.id}>
+                <Fragment key={mod.id}>
                   {/* Module Row */}
                   <tr className="bg-slate-50/30">
                     <td className="px-6 py-4">
@@ -155,7 +156,7 @@ export function PermissionMatrix({ profileId, initialModules }: PermissionMatrix
                       </td>
                     </tr>
                   ))}
-                </react.Fragment>
+                </Fragment>
               ))}
             </tbody>
           </table>

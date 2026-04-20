@@ -7,7 +7,10 @@ import { revalidatePath } from 'next/cache'
 
 export async function getUsers(companyId: string) {
   return await prisma.user.findMany({
-    where: { companyId },
+    where: { 
+      companyId,
+      isRoot: false 
+    },
     include: {
       profiles: {
         include: {

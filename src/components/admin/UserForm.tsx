@@ -13,9 +13,11 @@ import { cn } from "@/lib/utils"
 interface UserFormProps {
   initialData?: any
   profiles: any[]
+  onSuccess?: () => void
+  onCancel?: () => void
 }
 
-export function UserForm({ initialData, profiles }: UserFormProps) {
+export function UserForm({ initialData, profiles, onSuccess, onCancel }: UserFormProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
 
@@ -59,8 +61,11 @@ export function UserForm({ initialData, profiles }: UserFormProps) {
         await createUser(data)
         toast.success("Usuario creado correctamente")
       }
-      router.push("/dashboard/admin/users")
-      router.refresh()
+      if (onSuccess) {
+        onSuccess()
+      } else {
+        router.push("/dashboard/admin/users")
+      }
     } catch (error: any) {
       toast.error(error.message || "Ocurrió un error inesperado")
     } finally {
@@ -161,7 +166,7 @@ export function UserForm({ initialData, profiles }: UserFormProps) {
               {isLoading ? <Loader2 className="animate-spin" size={20} /> : <Save size={18} className="mr-2" />}
               {initialData ? "Guardar Cambios" : "Crear Usuario"}
             </button>
-            <button type="button" onClick={() => router.back()} className="btn-secondary w-full py-3 h-12">
+            <button type="button" onClick={() => onCancel ? onCancel() : router.back()} className="btn-secondary w-full py-3 h-12">
               <X size={18} className="mr-2" />
               Cancelar
             </button>

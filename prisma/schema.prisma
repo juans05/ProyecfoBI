@@ -1,7 +1,3 @@
-// =============================================
-// Prisma Schema — SaaS Multi-Empresa BI
-// =============================================
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,68 +7,63 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─────────────────────────────────────────────
-// DOMINIO: EMPRESAS (TENANTS)
-// ─────────────────────────────────────────────
-
 model Company {
-  id               String   @id @default(uuid())
-  name             String
-  taxId            String?  @unique @map("tax_id") // RUC/NIT
-  isActive         Boolean  @default(true) @map("is_active")
-  allowRootAccess  Boolean  @default(false) @map("allow_root_access")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  id              String    @id @default(uuid())
+  name            String
+  taxId           String?   @unique @map("tax_id")
+  tradeName       String?   @map("trade_name")
+  logoUrl         String?   @map("logo_url")
+  isActive        Boolean   @default(true) @map("is_active")
+  allowRootAccess Boolean   @default(false) @map("allow_root_access")
+  
+  // Branding Colors
+  primaryColor    String?   @default("#2563eb") @map("primary_color") // Títulos
+  secondaryColor  String?   @default("#64748b") @map("secondary_color") // Subtítulos
+  sidebarBgColor  String?   @default("#0f172a") @map("sidebar_bg_color") // Menú
+  sidebarTextColor String?  @default("#94a3b8") @map("sidebar_text_color") // Letras menú
 
-  // Relaciones
-  users     User[]
-  branches  Branch[]
-  modules   Module[]
-  profiles  Profile[]
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  branches        Branch[]
+  modules         Module[]
+  profiles        Profile[]
+  users           User[]
 
   @@map("companies")
 }
 
-// ─────────────────────────────────────────────
-// DOMINIO: AUTH & USUARIOS
-// ─────────────────────────────────────────────
-
 model User {
-  id           String   @id @default(uuid())
-  companyId    String?  @map("company_id") // Null solo para ROOT omnisciente
-  email        String   @unique
-  passwordHash String   @map("password_hash")
-  firstName    String   @map("first_name")
-  lastName     String   @map("last_name")
-  isRoot       Boolean  @default(false) @map("is_root") // Super Admin de sistema
-  isActive     Boolean  @default(true) @map("is_active")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-
-  // Relaciones
-  company           Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
-  profiles          UserProfile[]
-  branches          UserBranch[]
+  id                  String               @id @default(uuid())
+  companyId           String?              @map("company_id")
+  email               String               @unique
+  passwordHash        String               @map("password_hash")
+  firstName           String               @map("first_name")
+  lastName            String               @map("last_name")
+  isRoot              Boolean              @default(false) @map("is_root")
+  isActive            Boolean              @default(true) @map("is_active")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+  auditLogs           AuditLog[]
   passwordResetTokens PasswordResetToken[]
-  auditLogs         AuditLog[]
+  branches            UserBranch[]
+  profiles            UserProfile[]
+  company             Company?             @relation(fields: [companyId], references: [id])
 
   @@map("users")
 }
 
 model Profile {
-  id          String   @id @default(uuid())
-  companyId   String   @map("company_id")
-  name        String
-  description String?
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  // Relaciones
-  company         Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  users           UserProfile[]
-  profileModules  ProfileModule[]
+  id               String            @id @default(uuid())
+  companyId        String            @map("company_id")
+  name             String
+  description      String?
+  isActive         Boolean           @default(true) @map("is_active")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  profileModules   ProfileModule[]
   profileResources ProfileResource[]
+  company          Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  users            UserProfile[]
 
   @@unique([companyId, name])
   @@map("profiles")
@@ -83,31 +74,24 @@ model UserProfile {
   userId     String   @map("user_id")
   profileId  String   @map("profile_id")
   assignedAt DateTime @default(now()) @map("assigned_at")
-
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profile    Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, profileId])
   @@map("user_profiles")
 }
 
-// ─────────────────────────────────────────────
-// DOMINIO: MULTI-SEDE
-// ─────────────────────────────────────────────
-
 model Branch {
-  id        String   @id @default(uuid())
-  companyId String   @map("company_id")
+  id        String       @id @default(uuid())
+  companyId String       @map("company_id")
   name      String
-  code      String   @unique
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relaciones
+  code      String       @unique
+  isActive  Boolean      @default(true) @map("is_active")
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
   company   Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  users     UserBranch[]
   resources Resource[]
+  users     UserBranch[]
 
   @@map("branches")
 }
@@ -118,17 +102,12 @@ model UserBranch {
   branchId   String   @map("branch_id")
   isPrimary  Boolean  @default(false) @map("is_primary")
   assignedAt DateTime @default(now()) @map("assigned_at")
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  branch     Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, branchId])
   @@map("user_branches")
 }
-
-// ─────────────────────────────────────────────
-// DOMINIO: AUTH — RECUPERACIÓN
-// ─────────────────────────────────────────────
 
 model PasswordResetToken {
   id        String    @id @default(uuid())
@@ -137,75 +116,50 @@ model PasswordResetToken {
   expiresAt DateTime  @map("expires_at")
   usedAt    DateTime? @map("used_at")
   createdAt DateTime  @default(now()) @map("created_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("password_reset_tokens")
 }
 
-// ─────────────────────────────────────────────
-// DOMINIO: NAVEGACIÓN — MÓDULOS Y RECURSOS
-// ─────────────────────────────────────────────
-
 model Module {
-  id        String  @id @default(uuid())
-  companyId String  @map("company_id")
-  name      String
-  icon      String?
-  order     Int     @default(0)
-  parentId  String? @map("parent_id")
-  isActive  Boolean @default(true) @map("is_active")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relaciones
-  company        Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  parent         Module?           @relation("ModuleHierarchy", fields: [parentId], references: [id])
-  children       Module[]          @relation("ModuleHierarchy")
-  resources      Resource[]
+  id             String          @id @default(uuid())
+  companyId      String          @map("company_id")
+  name           String
+  icon           String?
+  order          Int             @default(0)
+  parentId       String?         @map("parent_id")
+  isActive       Boolean         @default(true) @map("is_active")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  company        Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  parent         Module?         @relation("ModuleHierarchy", fields: [parentId], references: [id])
+  children       Module[]        @relation("ModuleHierarchy")
   profileModules ProfileModule[]
+  resources      Resource[]
 
   @@unique([companyId, name])
   @@map("modules")
 }
 
 model Resource {
-  id                 String       @id @default(uuid())
-  moduleId           String       @map("module_id")
-  branchId           String?      @map("branch_id")
+  id                 String            @id @default(uuid())
+  moduleId           String            @map("module_id")
+  branchId           String?           @map("branch_id")
   name               String
   type               ResourceType
   url                String?
-  powerbiReportId    String?      @map("powerbi_report_id")
-  powerbiWorkspaceId String?      @map("powerbi_workspace_id")
-  order              Int          @default(0)
-  isActive           Boolean      @default(true) @map("is_active")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  module           Module            @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  branch           Branch?           @relation(fields: [branchId], references: [id], onDelete: SetNull)
-  profileResources ProfileResource[]
+  powerbiReportId    String?           @map("powerbi_report_id")
+  powerbiWorkspaceId String?           @map("powerbi_workspace_id")
+  order              Int               @default(0)
+  isActive           Boolean           @default(true) @map("is_active")
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
+  profileResources   ProfileResource[]
+  branch             Branch?           @relation(fields: [branchId], references: [id])
+  module             Module            @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 
   @@unique([moduleId, name])
   @@map("resources")
-}
-
-enum ResourceType {
-  PAGE
-  POWERBI
-  LINK
-}
-
-// ─────────────────────────────────────────────
-// DOMINIO: PERMISOS Y GOBERNANZA
-// ─────────────────────────────────────────────
-
-enum PermissionScope {
-  GLOBAL
-  LOCAL
 }
 
 model ProfileModule {
@@ -213,9 +167,8 @@ model ProfileModule {
   profileId String  @map("profile_id")
   moduleId  String  @map("module_id")
   canAccess Boolean @default(true) @map("can_access")
-
-  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  module  Module  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  module    Module  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@unique([profileId, moduleId])
   @@map("profile_modules")
@@ -229,22 +182,17 @@ model ProfileResource {
   canView    Boolean         @default(true) @map("can_view")
   canEdit    Boolean         @default(false) @map("can_edit")
   canDelete  Boolean         @default(false) @map("can_delete")
-
-  profile  Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  profile    Profile         @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  resource   Resource        @relation(fields: [resourceId], references: [id], onDelete: Cascade)
 
   @@unique([profileId, resourceId])
   @@map("profile_resources")
 }
 
-// ─────────────────────────────────────────────
-// DOMINIO: AUDITORÍA
-// ─────────────────────────────────────────────
-
 model AuditLog {
   id        String   @id @default(uuid())
   userId    String?  @map("user_id")
-  companyId String?  @map("company_id") // Auditoría segmentable por empresa
+  companyId String?  @map("company_id")
   action    String
   entity    String?
   entityId  String?  @map("entity_id")
@@ -253,11 +201,21 @@ model AuditLog {
   ipAddress String?  @map("ip_address")
   userAgent String?  @map("user_agent")
   createdAt DateTime @default(now()) @map("created_at")
-
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user      User?    @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([companyId])
   @@index([createdAt])
   @@map("audit_log")
+}
+
+enum ResourceType {
+  PAGE
+  POWERBI
+  LINK
+}
+
+enum PermissionScope {
+  GLOBAL
+  LOCAL
 }

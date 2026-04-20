@@ -40,3 +40,25 @@ export async function createResourceAction(moduleId: string, data: {
   revalidatePath("/dashboard/admin/modules")
   revalidatePath("/dashboard") // Para actualizar el menú lateral
 }
+
+export async function deleteModuleAction(moduleId: string) {
+  const session = await auth()
+  const companyId = (session?.user as any)?.companyId
+
+  if (!companyId) throw new Error("No autorizado")
+
+  await ModuleManagementService.deleteModule(companyId, moduleId)
+  
+  revalidatePath("/dashboard/admin/modules")
+  revalidatePath("/dashboard")
+}
+
+export async function deleteResourceAction(resourceId: string) {
+  const session = await auth()
+  if (!session) throw new Error("No autorizado")
+
+  await ModuleManagementService.deleteResource(resourceId)
+  
+  revalidatePath("/dashboard/admin/modules")
+  revalidatePath("/dashboard")
+}

@@ -5,6 +5,7 @@ import { auth } from "@/auth"
 import { NavigationService } from "@/domains/navigation/navigation.service"
 import { redirect } from "next/navigation"
 import { cookies } from "next/headers"
+import { prisma } from "@/lib/prisma"
 
 export default async function DashboardLayout({
   children,
@@ -31,6 +32,8 @@ export default async function DashboardLayout({
   const isRoot = (session.user as any).isRoot
 
   let menuData = []
+  let companyData = null
+
   if (isRoot && !companyId) {
     // Menú de Sistema para Root
     menuData = [
@@ -45,12 +48,37 @@ export default async function DashboardLayout({
       }
     ]
   } else if (companyId) {
-    menuData = await NavigationService.getMenuData(session.user.id, companyId, activeBranchId)
+    const [fetchedMenuData, fetchedCompanyData] = await Promise.all([
+      NavigationService.getMenuData(session.user.id, companyId, activeBranchId),
+      prisma.company.findUnique({
+        where: { id: companyId },
+        select: { 
+          name: true, 
+          tradeName: true, 
+          logoUrl: true,
+          primaryColor: true,
+          secondaryColor: true,
+          sidebarBgColor: true,
+          sidebarTextColor: true,
+          updatedAt: true
+        }
+      })
+    ])
+    menuData = fetchedMenuData
+    companyData = fetchedCompanyData
   }
 
   return (
-    <div className="intranet-layout bg-slate-50">
-      <Sidebar menuData={menuData} user={session.user} />
+    <div 
+      className="intranet-layout bg-slate-50"
+      style={{
+        '--brand-primary': companyData?.primaryColor || '#2563eb',
+        '--text-secondary': companyData?.secondaryColor || '#64748b',
+        '--sidebar-bg': companyData?.sidebarBgColor || '#0f172a',
+        '--sidebar-text': companyData?.sidebarTextColor || '#94a3b8',
+      } as React.CSSProperties}
+    >
+      <Sidebar menuData={menuData} user={session.user} companyData={companyData} />
       
       <main className="intranet-main">
         <header className="intranet-header justify-between">

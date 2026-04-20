@@ -87,5 +87,23 @@ export const ModuleManagementService = {
 
       return resource
     })
+  },
+
+  /**
+   * Elimina un módulo y todos sus recursos (Cascada por DB)
+   */
+  async deleteModule(companyId: string, id: string) {
+    return await prisma.module.delete({
+      where: { id, companyId }
+    })
+  },
+
+  /**
+   * Elimina un recurso específico
+   */
+  async deleteResource(id: string) {
+    return await prisma.resource.delete({
+      where: { id }
+    })
   }
 }

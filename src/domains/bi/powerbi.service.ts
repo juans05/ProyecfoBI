@@ -31,7 +31,8 @@ export class PowerBIService {
   private static tokenExpiration: number = 0
 
   /**
-   * Obtiene el Token de Acceso usando Service Principal (Recomendado).
+   * Obtiene el Token de Acceso usando Usuario Maestro (ROPC).
+   * Necesario para licencias PRO cuando no hay capacidad Premium.
    */
   private static async getAccessToken(): Promise<string> {
     const now = Date.now();
@@ -42,13 +43,15 @@ export class PowerBIService {
     }
 
     try {
-      console.log("[MSAL] Solicitando token mediante Service Principal...");
+      console.log(`[MSAL] Solicitando token mediante Usuario Maestro: ${this.username}`);
       
       const clientApp = this.clientApp;
       
-      // El flujo de Service Principal usa acquireTokenByClientCredential
-      const authResponse = await clientApp.acquireTokenByClientCredential({
+      // El flujo de Usuario Maestro usa acquireTokenByUsernamePassword
+      const authResponse = await clientApp.acquireTokenByUsernamePassword({
         scopes: ["https://analysis.windows.net/powerbi/api/.default"],
+        username: this.username,
+        password: this.password,
       });
 
       if (!authResponse || !authResponse.accessToken) {
@@ -61,13 +64,23 @@ export class PowerBIService {
         this.tokenExpiration = authResponse.expiresOn.getTime();
       }
 
-      console.log("[MSAL] Token obtenido con éxito mediante Service Principal");
+      console.log("[MSAL] Token obtenido con éxito mediante Usuario Maestro");
       return authResponse.accessToken;
     } catch (error: any) {
       console.error("[MSAL Diagnostics] Error detallado de Microsoft:", error.errorMessage || error.message);
+      
+      if (error.message.includes("AADSTS65001")) {
+        throw new Error("Falta el consentimiento de administrador. Daniel debe pulsar 'Grant admin consent' en el portal de aplicaciones.");
+      }
+      
+      if (error.message.includes("MFA")) {
+        throw new Error("La cuenta de usuario tiene MFA activo. El método de Usuario Maestro no es compatible con MFA.");
+      }
+
       throw new Error(`Error de autenticación: ${error.errorMessage || error.message}`);
     }
   }
+
 
   /**
    * Genera la configuración de embebido para un reporte

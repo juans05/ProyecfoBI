@@ -90,37 +90,49 @@ export function DataTable<T extends { id: string, isActive?: boolean }>({
                     </td>
                   ))}
                   <td className="text-right">
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-3">
                       {onToggleStatus && (
-                        <button 
-                          onClick={() => onToggleStatus(item)}
-                          className={`p-1.5 rounded-md transition-colors ${
-                            item.isActive 
-                              ? "text-emerald-600 hover:bg-emerald-50" 
-                              : "text-red-400 hover:bg-red-50"
-                          }`}
-                          title={item.isActive ? "Desactivar" : "Activar"}
-                        >
-                          {item.isActive ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
-                        </button>
+                        <div className="relative group">
+                          <button 
+                            onClick={() => onToggleStatus(item)}
+                            className={`p-1.5 rounded-md transition-colors ${
+                              item.isActive 
+                                ? "text-emerald-600 hover:bg-emerald-50" 
+                                : "text-red-400 hover:bg-red-50"
+                            }`}
+                          >
+                            {item.isActive ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
+                          </button>
+                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 transition-transform bg-slate-800 text-white text-[10px] py-1 px-2 rounded whitespace-nowrap z-50">
+                            {item.isActive ? "Desactivar" : "Activar"}
+                          </span>
+                        </div>
                       )}
                       {onEdit && (
-                        <button 
-                          onClick={() => onEdit(item)}
-                          className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-md transition-colors"
-                          title="Editar"
-                        >
-                          <Edit2 size={16} />
-                        </button>
+                        <div className="relative group">
+                          <button 
+                            onClick={() => onEdit(item)}
+                            className="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-md transition-colors"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 transition-transform bg-slate-800 text-white text-[10px] py-1 px-2 rounded whitespace-nowrap z-50">
+                            Editar
+                          </span>
+                        </div>
                       )}
                       {onDelete && (
-                        <button 
-                          onClick={() => onDelete(item)}
-                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                          title="Eliminar"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        <div className="relative group">
+                          <button 
+                            onClick={() => onDelete(item)}
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                          <span className="absolute -top-8 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 transition-transform bg-slate-800 text-white text-[10px] py-1 px-2 rounded whitespace-nowrap z-50">
+                            Eliminar
+                          </span>
+                        </div>
                       )}
                     </div>
                   </td>

@@ -1,8 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import { Package, Settings, ChevronRight, BarChart, FileCode, Plus, LayoutGrid } from "lucide-react"
+import { useState, useTransition } from "react"
+import { Package, Settings, ChevronRight, BarChart, FileCode, Plus, LayoutGrid, Trash2, Loader2 } from "lucide-react"
 import { CreateModuleModal, CreateResourceModal } from "@/components/admin/ModuleModals"
+import { deleteModuleAction, deleteResourceAction } from "@/domains/navigation/module-management.actions"
+import { toast } from "sonner"
 
 interface ModuleWithResources {
   id: string
@@ -14,18 +16,50 @@ export function ModuleManagementClient({ initialModules }: { initialModules: Mod
   const [isModuleModalOpen, setIsModuleModalOpen] = useState(false)
   const [isResourceModalOpen, setIsResourceModalOpen] = useState(false)
   const [selectedModule, setSelectedModule] = useState<{ id: string, name: string } | null>(null)
+  const [isPending, startTransition] = useTransition()
 
   const openResourceModal = (id: string, name: string) => {
     setSelectedModule({ id, name })
     setIsResourceModalOpen(true)
   }
 
+  const handleDeleteModule = (id: string, name: string) => {
+    if (confirm(`¿Estás seguro de eliminar el módulo "${name}"? Se borrarán todas sus pantallas asociadas.`)) {
+      startTransition(async () => {
+        try {
+          await deleteModuleAction(id)
+          toast.success("Módulo eliminado")
+        } catch (error) {
+          toast.error("Error al eliminar el módulo")
+        }
+      })
+    }
+  }
+
+  const handleDeleteResource = (id: string, name: string) => {
+    if (confirm(`¿Estás seguro de eliminar la pantalla "${name}"?`)) {
+      startTransition(async () => {
+        try {
+          await deleteResourceAction(id)
+          toast.success("Pantalla eliminada")
+        } catch (error) {
+          toast.error("Error al eliminar la pantalla")
+        }
+      })
+    }
+  }
+
+  const isProtected = (name: string) => {
+    const protectedNames = ["Administración", "Usuarios", "Perfiles", "Módulos y Recursos", "Ajustes de Empresa"]
+    return protectedNames.includes(name)
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Módulos y Recursos</h1>
-          <p className="text-slate-400 mt-1">Configura la navegación y herramientas de tu organización.</p>
+          <h1 className="text-3xl font-bold tracking-tight" style={{ color: 'var(--brand-primary)' }}>Módulos y Recursos</h1>
+          <p className="mt-1" style={{ color: 'var(--text-secondary)' }}>Configura la navegación y herramientas de tu organización.</p>
         </div>
         <button 
           onClick={() => setIsModuleModalOpen(true)}
@@ -49,9 +83,21 @@ export function ModuleManagementClient({ initialModules }: { initialModules: Mod
                   <span className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Módulo Activo</span>
                 </div>
               </div>
-              <button className="text-slate-400 hover:text-white transition-colors">
-                <Settings size={18} />
-              </button>
+              <div className="flex items-center gap-2">
+                {!isProtected(mod.name) && (
+                  <button 
+                    onClick={() => handleDeleteModule(mod.id, mod.name)}
+                    className="p-2 text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                    title="Eliminar Módulo"
+                    disabled={isPending}
+                  >
+                    <Trash2 size={20} />
+                  </button>
+                )}
+                <button className="text-slate-400 hover:text-white transition-colors">
+                  <Settings size={18} />
+                </button>
+              </div>
             </div>
 
             <div className="p-5 space-y-3">
@@ -73,7 +119,20 @@ export function ModuleManagementClient({ initialModules }: { initialModules: Mod
                         <p className="text-[10px] text-slate-500">{res.url || 'Power BI Embedded'}</p>
                       </div>
                     </div>
-                    <ChevronRight size={14} className="text-slate-600 group-hover/item:text-brand-400 group-hover/item:translate-x-1 transition-all" />
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteResource(res.id, res.name);
+                        }}
+                        className="p-1.5 opacity-100 text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-all"
+                        title="Eliminar Pantalla"
+                        disabled={isPending}
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                      <ChevronRight size={14} className="text-slate-600 group-hover/item:text-brand-400 group-hover/item:translate-x-1 transition-all" />
+                    </div>
                   </div>
                 ))
               )}

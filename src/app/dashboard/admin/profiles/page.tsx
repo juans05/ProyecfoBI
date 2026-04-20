@@ -2,6 +2,7 @@ import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { getProfilesWithStats } from "@/domains/profiles/permissions.service"
 import { ProfilesTable } from "@/components/admin/ProfilesTable"
+import { CreateProfileButton } from "@/components/admin/CreateProfileButton"
 import { Shield, Plus, Key } from "lucide-react"
 
 export default async function ProfilesPage() {
@@ -15,17 +16,14 @@ export default async function ProfilesPage() {
   const profiles = await getProfilesWithStats(companyId)
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Perfiles y Permisos</h1>
           <p className="text-slate-500 text-sm mt-1">Define roles y controla el acceso a módulos y reportes.</p>
         </div>
         
-        <button className="btn-primary">
-          <Plus size={18} className="mr-2" />
-          Nuevo Perfil
-        </button>
+        <CreateProfileButton companyId={companyId} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

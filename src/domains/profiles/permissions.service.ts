@@ -20,11 +20,14 @@ export async function getProfilesWithStats(companyId: string) {
 export async function getPermissionsByProfile(profileId: string) {
   const modules = await prisma.module.findMany({
     include: {
-      resources: true,
-      profileModules: {
-        where: { profileId }
+      resources: {
+        include: {
+          profileResources: {
+            where: { profileId }
+          }
+        }
       },
-      profileResources: {
+      profileModules: {
         where: { profileId }
       }
     },

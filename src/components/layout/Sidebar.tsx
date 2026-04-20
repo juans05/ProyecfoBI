@@ -12,10 +12,14 @@ import {
   LogOut,
   ChevronRight,
   Database,
-  FileText
+  FileText,
+  Shield,
+  Menu,
+  ChevronLeft
 } from 'lucide-react'
 import { clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import { useState, useEffect } from 'react'
 
 function cn(...inputs: any[]) {
   return twMerge(clsx(inputs))
@@ -33,40 +37,75 @@ const iconMap: Record<string, any> = {
 interface SidebarProps {
   menuData: any[]
   user: any
+  companyData: any
 }
 
-export function Sidebar({ menuData, user }: SidebarProps) {
+export function Sidebar({ menuData, user, companyData }: SidebarProps) {
   const pathname = usePathname()
+  const [isCollapsed, setIsCollapsed] = useState(false)
+
+  // Persistir estado en localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('sidebar-collapsed') === 'true'
+    setIsCollapsed(saved)
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem('sidebar-collapsed', isCollapsed.toString())
+    // Comunicar al layout mediante una clase en el body o contenedor
+    if (isCollapsed) {
+      document.querySelector('.intranet-layout')?.classList.add('sidebar-collapsed')
+    } else {
+      document.querySelector('.intranet-layout')?.classList.remove('sidebar-collapsed')
+    }
+  }, [isCollapsed])
+
+  const displayName = companyData?.tradeName || companyData?.name || "Intranet BI"
+  const logoUrl = companyData?.logoUrl 
+    ? `${companyData.logoUrl}?t=${new Date(companyData.updatedAt).getTime()}` 
+    : null
 
   return (
-    <aside className="intranet-sidebar border-r border-slate-800">
-      <div className="sidebar-logo">
-        <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center mr-3 shadow-lg shadow-brand-600/30">
-          <BarChart2 className="text-white" size={18} />
+    <aside 
+      className={cn("intranet-sidebar border-r border-slate-800", isCollapsed && "w-[80px]")}
+      style={{
+        backgroundColor: 'var(--sidebar-bg)',
+        color: 'var(--sidebar-text)',
+        borderColor: 'rgba(255,255,255,0.1)'
+      }}
+    >
+      <div className="sidebar-logo justify-between px-4">
+        <div className="flex items-center">
+          <div 
+            className="w-8 h-8 rounded-lg flex items-center justify-center mr-3 shadow-lg shadow-brand-600/30 overflow-hidden shrink-0"
+            style={{ backgroundColor: 'var(--brand-primary)' }}
+          >
+            {logoUrl ? (
+              <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
+            ) : (
+              <BarChart2 className="text-white" size={18} />
+            )}
+          </div>
+          {!isCollapsed && (
+            <span className="text-lg font-bold text-white tracking-tight truncate animate-in fade-in duration-300">
+              {displayName}
+            </span>
+          )}
         </div>
-        <span className="text-lg font-bold text-white tracking-tight">Intranet BI</span>
+        <button 
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 transition-colors"
+        >
+          {isCollapsed ? <Menu size={18} /> : <ChevronLeft size={18} />}
+        </button>
       </div>
 
       <nav className="sidebar-nav">
         <div className="space-y-6">
-          {/* Main Link */}
-          <div>
-            <Link
-              href="/dashboard"
-              className={cn(
-                "sidebar-nav-item",
-                pathname === "/dashboard" && "active"
-              )}
-            >
-              <LayoutDashboard size={18} />
-              <span>Dashboard</span>
-            </Link>
-          </div>
-
           {/* Dynamic Modules */}
           {menuData.map((mod) => (
             <div key={mod.id}>
-              <div className="sidebar-nav-group">{mod.name}</div>
+              {!isCollapsed && <div className="sidebar-nav-group animate-in fade-in duration-300">{mod.name}</div>}
               <div className="space-y-1">
                 {mod.resources.map((res: any) => {
                   const Icon = iconMap[mod.icon || 'FileText'] || FileText
@@ -78,28 +117,95 @@ export function Sidebar({ menuData, user }: SidebarProps) {
                       href={res.href}
                       className={cn(
                         "sidebar-nav-item",
+                        isCollapsed && "justify-center px-0",
                         isActive && "active"
                       )}
+                      style={{
+                        color: isActive ? 'white' : 'var(--sidebar-text)',
+                        backgroundColor: isActive ? 'var(--brand-primary)' : 'transparent'
+                      }}
+                      title={isCollapsed ? res.name : undefined}
                     >
-                      <Icon size={18} />
-                      <span className="flex-1">{res.name}</span>
-                      {isActive && <ChevronRight size={14} className="opacity-60" />}
+                      <Icon size={18} className="shrink-0" />
+                      {!isCollapsed && <span className="flex-1 truncate animate-in fade-in duration-300">{res.name}</span>}
+                      {isActive && !isCollapsed && <ChevronRight size={14} className="opacity-60" />}
                     </Link>
                   )
                 })}
               </div>
             </div>
           ))}
+          
+          {/* Static Admin Links */}
+          {(user?.isRoot || user?.profiles?.includes('Administrador')) && (
+            <div>
+              {!isCollapsed && <div className="sidebar-nav-group animate-in fade-in duration-300">Administración</div>}
+              <div className="space-y-1">
+                <Link
+                  href="/dashboard/admin/users"
+                  className={cn("sidebar-nav-item", isCollapsed && "justify-center px-0", pathname.includes("/admin/users") && "active")}
+                  style={{
+                    color: pathname.includes("/admin/users") ? 'white' : 'var(--sidebar-text)',
+                    backgroundColor: pathname.includes("/admin/users") ? 'var(--brand-primary)' : 'transparent'
+                  }}
+                  title={isCollapsed ? "Usuarios" : undefined}
+                >
+                  <Users size={18} className="shrink-0" />
+                  {!isCollapsed && <span className="flex-1 animate-in fade-in duration-300">Usuarios</span>}
+                </Link>
+                <Link
+                  href="/dashboard/admin/profiles"
+                  className={cn("sidebar-nav-item", isCollapsed && "justify-center px-0", pathname.includes("/admin/profiles") && "active")}
+                  style={{
+                    color: pathname.includes("/admin/profiles") ? 'white' : 'var(--sidebar-text)',
+                    backgroundColor: pathname.includes("/admin/profiles") ? 'var(--brand-primary)' : 'transparent'
+                  }}
+                  title={isCollapsed ? "Perfiles" : undefined}
+                >
+                  <Shield size={18} className="shrink-0" />
+                  {!isCollapsed && <span className="flex-1 animate-in fade-in duration-300">Perfiles</span>}
+                </Link>
+                <Link
+                  href="/dashboard/admin/modules"
+                  className={cn("sidebar-nav-item", isCollapsed && "justify-center px-0", pathname.includes("/admin/modules") && "active")}
+                  style={{
+                    color: pathname.includes("/admin/modules") ? 'white' : 'var(--sidebar-text)',
+                    backgroundColor: pathname.includes("/admin/modules") ? 'var(--brand-primary)' : 'transparent'
+                  }}
+                  title={isCollapsed ? "Módulos y Recursos" : undefined}
+                >
+                  <Database size={18} className="shrink-0" />
+                  {!isCollapsed && <span className="flex-1 animate-in fade-in duration-300">Módulos y Recursos</span>}
+                </Link>
+                <Link
+                  href="/dashboard/admin/settings"
+                  className={cn("sidebar-nav-item", isCollapsed && "justify-center px-0", pathname.includes("/admin/settings") && "active")}
+                  style={{
+                    color: pathname.includes("/admin/settings") ? 'white' : 'var(--sidebar-text)',
+                    backgroundColor: pathname.includes("/admin/settings") ? 'var(--brand-primary)' : 'transparent'
+                  }}
+                  title={isCollapsed ? "Ajustes de Empresa" : undefined}
+                >
+                  <Settings size={18} className="shrink-0" />
+                  {!isCollapsed && <span className="flex-1 animate-in fade-in duration-300">Ajustes de Empresa</span>}
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 
       <div className="p-4 border-t border-slate-800">
         <button 
           onClick={() => signOut()}
-          className="sidebar-nav-item text-red-400 hover:bg-red-500/10 hover:text-red-300"
+          className={cn(
+            "sidebar-nav-item text-red-400 hover:bg-red-500/10 hover:text-red-300",
+            isCollapsed && "justify-center px-0"
+          )}
+          title={isCollapsed ? "Cerrar Sesión" : undefined}
         >
-          <LogOut size={18} />
-          <span>Cerrar Sesión</span>
+          <LogOut size={18} className="shrink-0" />
+          {!isCollapsed && <span className="animate-in fade-in duration-300">Cerrar Sesión</span>}
         </button>
       </div>
     </aside>

@@ -7,7 +7,15 @@
 @layer base {
   :root {
     --sidebar-width: 260px;
+    --sidebar-collapsed-width: 80px;
     --header-height: 64px;
+    --sidebar-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Branding Defaults */
+    --brand-primary: #2563eb;
+    --text-secondary: #64748b;
+    --sidebar-bg: #0f172a;
+    --sidebar-text: #94a3b8;
   }
 
   * {
@@ -44,13 +52,23 @@
   .intranet-sidebar {
     width: var(--sidebar-width);
     min-height: 100vh;
+    transition: var(--sidebar-transition);
     @apply bg-slate-900 flex flex-col fixed left-0 top-0 z-40;
+  }
+
+  .intranet-layout.sidebar-collapsed .intranet-sidebar {
+    width: var(--sidebar-collapsed-width);
   }
 
   .intranet-main {
     margin-left: var(--sidebar-width);
     min-height: 100vh;
+    transition: var(--sidebar-transition);
     @apply flex flex-col flex-1;
+  }
+
+  .intranet-layout.sidebar-collapsed .intranet-main {
+    margin-left: var(--sidebar-collapsed-width);
   }
 
   .intranet-header {

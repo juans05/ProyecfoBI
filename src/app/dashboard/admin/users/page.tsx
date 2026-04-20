@@ -1,10 +1,12 @@
 import { getUsers } from "@/domains/users/users.service"
+import { getProfiles } from "@/domains/profiles/profiles.service"
 import { UsersTable } from "@/components/admin/UsersTable"
 import { Plus, UserCheck, UserMinus, Shield } from "lucide-react"
 import Link from "next/link"
 
 export default async function UsersPage() {
   const users = await getUsers()
+  const profiles = await getProfiles()
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -50,7 +52,7 @@ export default async function UsersPage() {
         </div>
       </div>
 
-      <UsersTable users={users} />
+      <UsersTable users={users} profiles={profiles} />
     </div>
   )
 }
