@@ -73,8 +73,8 @@ export class PowerBIService {
         throw new Error("Falta el consentimiento de administrador. Daniel debe pulsar 'Grant admin consent' en el portal de aplicaciones.");
       }
       
-      if (error.message.includes("MFA")) {
-        throw new Error("La cuenta de usuario tiene MFA activo. El método de Usuario Maestro no es compatible con MFA.");
+      if (error.message.includes("MFA") || error.message.includes("AADSTS50076")) {
+        throw new Error("MFA_REQUIRED: La cuenta tiene activo el Doble Factor (MFA). El administrador debe desactivar MFA para esta cuenta o crear una política de exclusión.");
       }
 
       throw new Error(`Error de autenticación: ${error.errorMessage || error.message}`);
