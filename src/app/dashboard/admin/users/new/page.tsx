@@ -1,9 +1,18 @@
+import { auth } from "@/auth"
+import { redirect } from "next/navigation"
 import { UserForm } from "@/components/admin/UserForm"
 import { getProfiles } from "@/domains/profiles/profiles.service"
 import { ChevronLeft } from "lucide-react"
 import Link from "next/link"
 
 export default async function NewUserPage() {
+  const session = await auth()
+  const companyId = (session?.user as any)?.companyId
+
+  if (!companyId) {
+    redirect("/dashboard")
+  }
+
   const profiles = await getProfiles()
 
   return (
@@ -21,7 +30,7 @@ export default async function NewUserPage() {
         </div>
       </div>
 
-      <UserForm profiles={profiles} />
+      <UserForm companyId={companyId} profiles={profiles} />
     </div>
   )
 }

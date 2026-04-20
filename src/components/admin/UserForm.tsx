@@ -11,13 +11,14 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
 interface UserFormProps {
+  companyId: string
   initialData?: any
   profiles: any[]
   onSuccess?: () => void
   onCancel?: () => void
 }
 
-export function UserForm({ initialData, profiles, onSuccess, onCancel }: UserFormProps) {
+export function UserForm({ companyId, initialData, profiles, onSuccess, onCancel }: UserFormProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
 
@@ -55,10 +56,10 @@ export function UserForm({ initialData, profiles, onSuccess, onCancel }: UserFor
     setIsLoading(true)
     try {
       if (initialData) {
-        await updateUser({ ...data, id: initialData.id } as any)
+        await updateUser({ ...data, id: initialData.id, companyId } as any)
         toast.success("Usuario actualizado correctamente")
       } else {
-        await createUser(data)
+        await createUser({ ...data, companyId })
         toast.success("Usuario creado correctamente")
       }
       if (onSuccess) {

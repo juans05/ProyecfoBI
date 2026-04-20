@@ -61,7 +61,7 @@ export default async function UsersPage() {
         </div>
       </div>
 
-      <UsersTable users={users} profiles={profiles} />
+      <UsersTable companyId={companyId} users={users} profiles={profiles} />
     </div>
   )
 }

@@ -7,11 +7,12 @@ import { Users, UserCircle, Edit2, X, Shield } from "lucide-react"
 import { UserForm } from "@/components/admin/UserForm"
 
 interface UsersTableProps {
+  companyId: string
   users: any[]
   profiles: any[]
 }
 
-export function UsersTable({ users, profiles }: UsersTableProps) {
+export function UsersTable({ companyId, users, profiles }: UsersTableProps) {
   const [editingUser, setEditingUser] = useState<any | null>(null)
   
   const columns = [
@@ -62,7 +63,7 @@ export function UsersTable({ users, profiles }: UsersTableProps) {
         data={users}
         searchKey="email"
         searchPlaceholder="Buscar por email..."
-        onToggleStatus={toggleUserStatus}
+        onToggleStatus={(user) => toggleUserStatus(user, companyId)}
         onEdit={(user) => setEditingUser(user)}
       />
 
@@ -87,6 +88,7 @@ export function UsersTable({ users, profiles }: UsersTableProps) {
 
             <div className="p-6">
               <UserForm 
+                companyId={companyId}
                 initialData={editingUser} 
                 profiles={profiles} 
                 onSuccess={() => setEditingUser(null)}
