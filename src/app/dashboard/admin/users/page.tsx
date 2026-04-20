@@ -1,3 +1,5 @@
+import { auth } from "@/auth"
+import { redirect } from "next/navigation"
 import { getUsers } from "@/domains/users/users.service"
 import { getProfiles } from "@/domains/profiles/profiles.service"
 import { UsersTable } from "@/components/admin/UsersTable"
@@ -5,7 +7,14 @@ import { Plus, UserCheck, UserMinus, Shield } from "lucide-react"
 import Link from "next/link"
 
 export default async function UsersPage() {
-  const users = await getUsers()
+  const session = await auth()
+  const companyId = (session?.user as any)?.companyId
+
+  if (!companyId) {
+    redirect("/dashboard")
+  }
+
+  const users = await getUsers(companyId)
   const profiles = await getProfiles()
 
   return (

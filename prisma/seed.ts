@@ -11,66 +11,96 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('🌱 Iniciando seed...')
 
-  // ─── Perfiles base ─────────────────────────────
-  const adminProfile = await prisma.profile.upsert({
-    where: { name: 'Administrador' },
+  // 1. Crear Empresa Principal: Gran Molino
+  const company = await prisma.company.upsert({
+    where: { taxId: '20600000001' },
     update: {},
     create: {
+      name: 'Gran Molino S.A.C.',
+      tradeName: 'Gran Molino',
+      taxId: '20600000001',
+      primaryColor: '#2563eb',
+      secondaryColor: '#64748b',
+      sidebarBgColor: '#0f172a',
+      sidebarTextColor: '#94a3b8',
+    },
+  })
+
+  // 2. Crear Sede Principal
+  const branch = await prisma.branch.upsert({
+    where: { code: 'MAIN-01' },
+    update: {},
+    create: {
+      companyId: company.id,
+      name: 'Sede Principal - Lima',
+      code: 'MAIN-01',
+      isActive: true,
+    },
+  })
+
+  console.log('✅ Empresa y Sede creadas:', company.name)
+
+  // 3. Perfiles base vinculados a la empresa
+  const adminProfile = await prisma.profile.upsert({
+    where: { companyId_name: { companyId: company.id, name: 'Administrador' } },
+    update: {},
+    create: {
+      companyId: company.id,
       name: 'Administrador',
       description: 'Acceso total al sistema',
     },
   })
 
   const analystProfile = await prisma.profile.upsert({
-    where: { name: 'Analista BI' },
+    where: { companyId_name: { companyId: company.id, name: 'Analista BI' } },
     update: {},
     create: {
+      companyId: company.id,
       name: 'Analista BI',
       description: 'Acceso a dashboards de Power BI',
     },
   })
 
-  const viewerProfile = await prisma.profile.upsert({
-    where: { name: 'Visualizador' },
-    update: {},
-    create: {
-      name: 'Visualizador',
-      description: 'Solo lectura de reportes asignados',
-    },
-  })
+  console.log('✅ Perfiles creados vinculados a la empresa')
 
-  console.log('✅ Perfiles creados:', adminProfile.name, analystProfile.name, viewerProfile.name)
-
-  // ─── Usuario administrador ──────────────────────
+  // 4. Usuario administrador vinculado a la empresa
   const passwordHash = await bcrypt.hash('Admin@123!', 12)
 
   const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@empresa.com' },
+    where: { email: 'admin@granmolino.com' },
     update: {},
     create: {
-      email: 'admin@empresa.com',
+      email: 'admin@granmolino.com',
       passwordHash,
-      firstName: 'Super',
-      lastName: 'Admin',
+      firstName: 'Administrador',
+      lastName: 'Gran Molino',
+      companyId: company.id,
       isActive: true,
     },
   })
 
-  // Asignar perfil Admin al usuario admin
+  // Asignar el perfil de administrador al usuario
   await prisma.userProfile.upsert({
     where: { userId_profileId: { userId: adminUser.id, profileId: adminProfile.id } },
     update: {},
     create: { userId: adminUser.id, profileId: adminProfile.id },
   })
 
-  console.log('✅ Usuario admin creado:', adminUser.email)
+  // Asignar sede principal al usuario
+  await prisma.userBranch.upsert({
+    where: { userId_branchId: { userId: adminUser.id, branchId: branch.id } },
+    update: {},
+    create: { userId: adminUser.id, branchId: branch.id, isPrimary: true },
+  })
 
-  // ─── Módulos base (estructura del menú) ────────
+  console.log('✅ Usuario admin configurado para Gran Molino')
+
+  // 5. Módulos base vinculados a la empresa
   const adminModule = await prisma.module.upsert({
-    where: { id: '00000000-0000-0000-0000-000000000001' },
+    where: { companyId_name: { companyId: company.id, name: 'Administración' } },
     update: {},
     create: {
-      id: '00000000-0000-0000-0000-000000000001',
+      companyId: company.id,
       name: 'Administración',
       icon: 'Settings',
       order: 100,
@@ -78,125 +108,66 @@ async function main() {
   })
 
   const reportesModule = await prisma.module.upsert({
-    where: { id: '00000000-0000-0000-0000-000000000002' },
+    where: { companyId_name: { companyId: company.id, name: 'Reportes BI' } },
     update: {},
     create: {
-      id: '00000000-0000-0000-0000-000000000002',
+      companyId: company.id,
       name: 'Reportes BI',
       icon: 'BarChart2',
       order: 10,
     },
   })
 
-  console.log('✅ Módulos creados')
+  console.log('✅ Estructura de módulos creada')
 
-  // ─── Recursos de Administración ────────────────
-  const resAdminUsers = await prisma.resource.upsert({
-    where: { id: '00000000-0000-0000-0001-000000000001' },
-    update: {},
-    create: {
-      id: '00000000-0000-0000-0001-000000000001',
-      moduleId: adminModule.id,
-      name: 'Usuarios',
-      type: ResourceType.PAGE,
-      url: '/dashboard/admin/users',
-      order: 1,
-    },
-  })
+  // 6. Recursos (Páginas de administración)
+  const resourcesData = [
+    { name: 'Usuarios', url: '/dashboard/admin/users', order: 1 },
+    { name: 'Perfiles', url: '/dashboard/admin/profiles', order: 2 },
+    { name: 'Ajustes de Empresa', url: '/dashboard/admin/settings', order: 3 },
+  ]
 
-  const resAdminProfiles = await prisma.resource.upsert({
-    where: { id: '00000000-0000-0000-0001-000000000002' },
-    update: {},
-    create: {
-      id: '00000000-0000-0000-0001-000000000002',
-      moduleId: adminModule.id,
-      name: 'Perfiles',
-      type: ResourceType.PAGE,
-      url: '/dashboard/admin/profiles',
-      order: 2,
-    },
-  })
+  for (const res of resourcesData) {
+    const resource = await prisma.resource.upsert({
+      where: { moduleId_name: { moduleId: adminModule.id, name: res.name } },
+      update: {},
+      create: {
+        moduleId: adminModule.id,
+        name: res.name,
+        type: ResourceType.PAGE,
+        url: res.url,
+        order: res.order,
+      },
+    })
 
-  const resAdminModules = await prisma.resource.upsert({
-    where: { id: '00000000-0000-0000-0001-000000000003' },
-    update: {},
-    create: {
-      id: '00000000-0000-0000-0001-000000000003',
-      moduleId: adminModule.id,
-      name: 'Módulos',
-      type: ResourceType.PAGE,
-      url: '/dashboard/admin/modules',
-      order: 3,
-    },
-  })
+    // Dar permisos automáticos al perfil Admin para estos recursos
+    await prisma.profileResource.upsert({
+      where: { profileId_resourceId: { profileId: adminProfile.id, resourceId: resource.id } },
+      update: {},
+      create: { 
+        profileId: adminProfile.id, 
+        resourceId: resource.id, 
+        canView: true, 
+        canEdit: true, 
+        canDelete: true 
+      },
+    })
+  }
 
-  const resAdminResources = await prisma.resource.upsert({
-    where: { id: '00000000-0000-0000-0001-000000000004' },
-    update: {},
-    create: {
-      id: '00000000-0000-0000-0001-000000000004',
-      moduleId: adminModule.id,
-      name: 'Recursos',
-      type: ResourceType.PAGE,
-      url: '/dashboard/admin/resources',
-      order: 4,
-    },
-  })
-
-  const resAdminPerms = await prisma.resource.upsert({
-    where: { id: '00000000-0000-0000-0001-000000000005' },
-    update: {},
-    create: {
-      id: '00000000-0000-0000-0001-000000000005',
-      moduleId: adminModule.id,
-      name: 'Permisos',
-      type: ResourceType.PAGE,
-      url: '/dashboard/admin/permissions',
-      order: 5,
-    },
-  })
-
-  console.log('✅ Recursos admin creados')
-
-  // ─── Permisos del perfil Administrador ─────────
-  // El admin tiene acceso a todos los módulos y recursos
+  // Activar el módulo de administración para el perfil Admin
   await prisma.profileModule.upsert({
     where: { profileId_moduleId: { profileId: adminProfile.id, moduleId: adminModule.id } },
     update: {},
     create: { profileId: adminProfile.id, moduleId: adminModule.id, canAccess: true },
   })
 
-  await prisma.profileModule.upsert({
-    where: { profileId_moduleId: { profileId: adminProfile.id, moduleId: reportesModule.id } },
-    update: {},
-    create: { profileId: adminProfile.id, moduleId: reportesModule.id, canAccess: true },
-  })
-
-  const adminResources = [resAdminUsers, resAdminProfiles, resAdminModules, resAdminResources, resAdminPerms]
-
-  for (const resource of adminResources) {
-    await prisma.profileResource.upsert({
-      where: { profileId_resourceId: { profileId: adminProfile.id, resourceId: resource.id } },
-      update: {},
-      create: {
-        profileId: adminProfile.id,
-        resourceId: resource.id,
-        canView: true,
-        canEdit: true,
-        canDelete: true,
-      },
-    })
-  }
-
-  console.log('✅ Permisos del administrador configurados')
+  console.log('✅ Recursos y permisos configurados')
   console.log('')
-  console.log('🎉 Seed completado exitosamente!')
-  console.log('')
-  console.log('──────────────────────────────────')
-  console.log('  Credenciales del administrador:')
-  console.log('  Email:    admin@empresa.com')
-  console.log('  Password: Admin@123!')
-  console.log('──────────────────────────────────')
+  console.log('🎉 Seed completado exitosamente para GRAN MOLINO!')
+  console.log('──────────────────────────────────────')
+  console.log('  Admin Email:    admin@granmolino.com')
+  console.log('  Password:       Admin@123!')
+  console.log('──────────────────────────────────────')
 }
 
 main()

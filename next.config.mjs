@@ -4,7 +4,12 @@ const nextConfig = {
     serverComponentsExternalPackages: ['@prisma/client', 'bcryptjs'],
   },
   images: {
-    domains: [],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
+    ],
   },
 }
 
