@@ -63,5 +63,6 @@ export const authOptions: NextAuthConfig = {
     error: '/login',
   },
 
-  secret: process.env.AUTH_SECRET,
+  trustHost: true,
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
 }
