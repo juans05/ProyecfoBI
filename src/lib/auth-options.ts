@@ -3,12 +3,12 @@
  * Configuración de NextAuth v5 con Credentials Provider
  */
 
-import type { NextAuthOptions } from 'next-auth'
+import type { NextAuthConfig } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { AuthService } from '@/domains/auth/auth.service'
 import { LoginSchema } from '@/domains/auth/auth.schema'
 
-export const authOptions: NextAuthOptions = {
+export const authOptions: NextAuthConfig = {
   providers: [
     CredentialsProvider({
       name: 'Credentials',
