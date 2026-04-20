@@ -167,6 +167,7 @@ export function Sidebar({ menuData, user, companyData, isMobileOpen, onClose }: 
           {!isCollapsed && <span className="animate-in fade-in duration-300">Cerrar Sesión</span>}
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   )
 }
