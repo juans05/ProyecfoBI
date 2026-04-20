@@ -31,8 +31,8 @@ export default async function DashboardLayout({
   const companyId = (session.user as any).companyId
   const isRoot = (session.user as any).isRoot
 
-  let menuData: Awaited<ReturnType<typeof NavigationService.getMenuData>> = []
-  let companyData = null
+  let menuData: any[] = []
+  let companyData: any = null
 
   if (isRoot && !companyId) {
     // Menú de Sistema para Root
