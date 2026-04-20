@@ -33,7 +33,7 @@
     "lucide-react": "^0.462.0",
     "msal": "^1.4.18",
     "msal-node": "^0.0.1-security",
-    "next": "14.2.29",
+    "next": "^14.2.35",
     "next-auth": "^5.0.0-beta.25",
     "powerbi-client": "^2.23.10",
     "powerbi-client-react": "^2.0.2",
