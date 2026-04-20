@@ -24,9 +24,9 @@ export function BIReportView({ resource }: BIReportConfigProps) {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-var(--header-height)-5rem)] space-y-4 animate-in fade-in duration-500">
+    <div className="flex flex-col h-[calc(100vh-var(--header-height)-2rem)] space-y-3 animate-in fade-in duration-500">
       {/* Header del Reporte */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-6 pt-4">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-brand-50 rounded-lg" style={{ color: 'var(--brand-primary)' }}>
             <BarChart2 size={20} />
@@ -60,12 +60,12 @@ export function BIReportView({ resource }: BIReportConfigProps) {
       </div>
 
       {/* Contenedor del Reporte */}
-      <div className="flex-1 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden relative min-h-[500px] pbi-container">
+      <div className="flex-1 bg-white border-y border-slate-200 shadow-sm overflow-hidden relative min-h-[500px] pbi-container">
         <PowerBIEmbed resourceId={resource.id} refreshTrigger={refreshTrigger} />
       </div>
 
       {/* Footer / Nota */}
-      <div className="flex items-center justify-between text-[11px] text-slate-400">
+      <div className="flex items-center justify-between text-[11px] text-slate-400 px-6 pb-3">
         <p>Resource ID: {resource.id}</p>
         <p>Integración Segura GranMolino — Power BI Embedded</p>
       </div>
